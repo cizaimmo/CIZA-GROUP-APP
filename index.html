@@ -1,0 +1,826 @@
+import React, { useState } from "react";
+import {
+  SafeAreaView,
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  StyleSheet,
+  Alert,
+} from "react-native";
+
+/**
+ * CIZA GROUP APP
+ * Écran principal : CizaCarWash+ (flux en 4 étapes)
+ * - Étape 1 : choix véhicule + formule
+ * - Étape 2 : date / heure / lieu / message
+ * - Étape 3 : mode de paiement + infos
+ * - Étape 4 : confirmation
+ *
+ * ⚠️ IMPORTANT :
+ * Ici le paiement n’est pas encore connecté à une vraie passerelle.
+ * Plus tard, tu brancheras cette partie sur un backend ou une API
+ * de paiement local (banque, mobile money, etc.).
+ */
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState("carwash"); // 'carwash' | 'services' | 'profile'
+  const [step, setStep] = useState(1); // 1 | 2 | 3 | 4
+
+  // Étape 1
+  const [vehicleType, setVehicleType] = useState("");
+  const [washPack, setWashPack] = useState("");
+
+  // Étape 2
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [location, setLocation] = useState("");
+  const [note, setNote] = useState("");
+
+  // Étape 3
+  const [payMethod, setPayMethod] = useState(""); // 'visa' | 'mastercard' | 'cizapay' | ''
+  const [payName, setPayName] = useState("");
+  const [payNumber, setPayNumber] = useState("");
+  const [payExp, setPayExp] = useState("");
+
+  // Étape 4 – recap
+  const [lastReference, setLastReference] = useState("");
+
+  const resetFlow = () => {
+    setVehicleType("");
+    setWashPack("");
+    setDate("");
+    setTime("");
+    setLocation("");
+    setNote("");
+    setPayMethod("");
+    setPayName("");
+    setPayNumber("");
+    setPayExp("");
+    setLastReference("");
+    setStep(1);
+  };
+
+  const goToStep = (target) => {
+    setStep(target);
+  };
+
+  const handleContinueStep1 = () => {
+    if (!vehicleType || !washPack) {
+      Alert.alert(
+        "Information manquante",
+        "Merci de choisir un type de véhicule et une formule de lavage."
+      );
+      return;
+    }
+    setStep(2);
+  };
+
+  const handleContinueStep2 = () => {
+    if (!date || !time || !location) {
+      Alert.alert(
+        "Information manquante",
+        "Merci de renseigner la date, l’heure et le lieu du lavage."
+      );
+      return;
+    }
+    setStep(3);
+  };
+
+  const handleConfirmPayment = () => {
+    if (!payMethod) {
+      Alert.alert(
+        "Mode de paiement",
+        "Merci de choisir un mode de paiement (Visa, Mastercard ou CizaPay+ / Mobile)."
+      );
+      return;
+    }
+    if (!payName || !payNumber || !payExp) {
+      Alert.alert(
+        "Information de paiement",
+        "Merci de compléter les informations de paiement."
+      );
+      return;
+    }
+
+    // ➜ Ici, plus tard, tu appelleras ton backend / API de paiement
+    //   Exemple :
+    //   await fetch("https://ton-api-ciza.com/pay", { method: "POST", body: JSON.stringify({ ... }) })
+
+    const ref =
+      "CIZA-" + Math.floor(Math.random() * 999999).toString().padStart(6, "0");
+    setLastReference(ref);
+    setStep(4);
+  };
+
+  const renderStepper = () => {
+    const steps = [
+      { id: 1, label: "Service" },
+      { id: 2, label: "Détails" },
+      { id: 3, label: "Paiement" },
+      { id: 4, label: "Confirmation" },
+    ];
+
+    return (
+      <View style={styles.stepper}>
+        {steps.map((s) => {
+          const active = s.id <= step;
+          return (
+            <View key={s.id} style={styles.step}>
+              <View
+                style={[
+                  styles.stepCircle,
+                  active && styles.stepCircleActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.stepCircleText,
+                    active && styles.stepCircleTextActive,
+                  ]}
+                >
+                  {s.id}
+                </Text>
+              </View>
+              <Text style={[styles.stepLabel, active && styles.stepLabelActive]}>
+                {s.label}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    );
+  };
+
+  const renderTabButtons = () => {
+    return (
+      <View style={styles.tabs}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "carwash" && styles.tabActive]}
+          onPress={() => setActiveTab("carwash")}
+        >
+          <Text style={styles.tabIcon}>🚗</Text>
+          <Text
+            style={[
+              styles.tabLabel,
+              activeTab === "carwash" && styles.tabLabelActive,
+            ]}
+          >
+            CizaCarWash+
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "services" && styles.tabActive]}
+          onPress={() => setActiveTab("services")}
+        >
+          <Text style={styles.tabIcon}>🧩</Text>
+          <Text
+            style={[
+              styles.tabLabel,
+              activeTab === "services" && styles.tabLabelActive,
+            ]}
+          >
+            Autres services
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "profile" && styles.tabActive]}
+          onPress={() => setActiveTab("profile")}
+        >
+          <Text style={styles.tabIcon}>👤</Text>
+          <Text
+            style={[
+              styles.tabLabel,
+              activeTab === "profile" && styles.tabLabelActive,
+            ]}
+          >
+            Profil
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  const renderChipGroup = (selectedValue, setValue, items) => {
+    return (
+      <View style={styles.chipGroup}>
+        {items.map((item) => {
+          const selected = selectedValue === item;
+          return (
+            <TouchableOpacity
+              key={item}
+              style={[styles.chip, selected && styles.chipSelected]}
+              onPress={() => setValue(item)}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  selected && styles.chipTextSelected,
+                ]}
+              >
+                {item}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
+  };
+
+  const renderPayOption = (value, title, subtitle) => {
+    const selected = payMethod === value;
+    return (
+      <TouchableOpacity
+        style={[styles.payOption, selected && styles.payOptionSelected]}
+        onPress={() => setPayMethod(value)}
+      >
+        <Text style={styles.payOptionTitle}>{title}</Text>
+        <Text style={styles.payOptionSubtitle}>{subtitle}</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderStep1 = () => (
+    <View>
+      <Text style={styles.fieldLabel}>Type de véhicule</Text>
+      {renderChipGroup(vehicleType, setVehicleType, [
+        "Moto",
+        "Voiture citadine",
+        "SUV / 4x4",
+        "Utilitaire / Pick-up",
+      ])}
+
+      <Text style={[styles.fieldLabel, { marginTop: 12 }]}>
+        Formule de lavage
+      </Text>
+      {renderChipGroup(washPack, setWashPack, [
+        "Express extérieur",
+        "Complet intérieur + extérieur",
+        "Premium (détail & brillance)",
+      ])}
+
+      <View style={styles.buttonRow}>
+        <TouchableOpacity style={styles.buttonPrimary} onPress={handleContinueStep1}>
+          <Text style={styles.buttonPrimaryText}>Continuer</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderStep2 = () => (
+    <View>
+      <View style={styles.row2}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.fieldLabel}>Date souhaitée</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="JJ/MM/AAAA"
+            placeholderTextColor="#6b7280"
+            value={date}
+            onChangeText={setDate}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.fieldLabel}>Heure souhaitée</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="HH:MM"
+            placeholderTextColor="#6b7280"
+            value={time}
+            onChangeText={setTime}
+          />
+        </View>
+      </View>
+
+      <Text style={[styles.fieldLabel, { marginTop: 12 }]}>Lieu du lavage</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Ex : Domicile / Bureau / Parking partenaire"
+        placeholderTextColor="#6b7280"
+        value={location}
+        onChangeText={setLocation}
+      />
+
+      <Text style={[styles.fieldLabel, { marginTop: 12 }]}>
+        Message / besoin précis
+      </Text>
+      <TextInput
+        style={[styles.input, styles.textarea]}
+        multiline
+        placeholder="Ex : sièges tissu, enfant à bord, véhicule très sale..."
+        placeholderTextColor="#6b7280"
+        value={note}
+        onChangeText={setNote}
+      />
+
+      <View style={styles.buttonRow}>
+        <TouchableOpacity
+          style={styles.buttonGhost}
+          onPress={() => goToStep(1)}
+        >
+          <Text style={styles.buttonGhostText}>Retour</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.buttonPrimary}
+          onPress={handleContinueStep2}
+        >
+          <Text style={styles.buttonPrimaryText}>Continuer</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderStep3 = () => (
+    <View>
+      <Text style={styles.fieldLabel}>Mode de paiement</Text>
+      <View style={styles.payMethods}>
+        {renderPayOption("visa", "VISA", "Carte de crédit")}
+        {renderPayOption("mastercard", "Mastercard", "Carte de crédit")}
+        {renderPayOption("cizapay", "CizaPay+ / Mobile", "Wallet / Mobile money")}
+      </View>
+
+      <Text style={[styles.fieldLabel, { marginTop: 12 }]}>
+        Nom sur la carte / compte
+      </Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Nom complet"
+        placeholderTextColor="#6b7280"
+        value={payName}
+        onChangeText={setPayName}
+      />
+
+      <View style={styles.row2}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.fieldLabel}>Numéro de carte / compte</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="•••• •••• •••• ••••"
+            placeholderTextColor="#6b7280"
+            value={payNumber}
+            onChangeText={setPayNumber}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.fieldLabel}>Expiration / Code</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="MM/AA + code"
+            placeholderTextColor="#6b7280"
+            value={payExp}
+            onChangeText={setPayExp}
+          />
+        </View>
+      </View>
+
+      <View style={styles.buttonRow}>
+        <TouchableOpacity
+          style={styles.buttonGhost}
+          onPress={() => goToStep(2)}
+        >
+          <Text style={styles.buttonGhostText}>Retour</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.buttonPrimary}
+          onPress={handleConfirmPayment}
+        >
+          <Text style={styles.buttonPrimaryText}>Payer et confirmer</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderStep4 = () => (
+    <View>
+      <Text style={styles.confirmTitle}>Demande envoyée à CizaCarWash+</Text>
+      <Text style={styles.confirmText}>
+        Votre demande de lavage a été enregistrée. Un agent CIZA GROUP confirmera
+        le créneau et vous contactera si nécessaire.
+      </Text>
+
+      <View style={styles.summaryBox}>
+        <Text style={styles.summaryTitle}>Récapitulatif</Text>
+        <Text style={styles.summaryLine}>Véhicule : {vehicleType || "—"}</Text>
+        <Text style={styles.summaryLine}>Formule : {washPack || "—"}</Text>
+        <Text style={styles.summaryLine}>
+          Date / heure : {date || "—"} {time || ""}
+        </Text>
+        <Text style={styles.summaryLine}>Lieu : {location || "—"}</Text>
+        <Text style={styles.summaryLine}>
+          Paiement :{" "}
+          {payMethod === "visa"
+            ? "VISA"
+            : payMethod === "mastercard"
+            ? "Mastercard"
+            : payMethod === "cizapay"
+            ? "CizaPay+ / Mobile"
+            : "—"}
+        </Text>
+        <Text style={styles.summaryLine}>
+          Message : {note ? note : "—"}
+        </Text>
+        {lastReference ? (
+          <Text style={[styles.summaryLine, { marginTop: 8 }]}>
+            Référence : <Text style={{ color: "#facc15" }}>{lastReference}</Text>
+          </Text>
+        ) : null}
+      </View>
+
+      <View style={styles.buttonRow}>
+        <TouchableOpacity style={styles.buttonPrimary} onPress={resetFlow}>
+          <Text style={styles.buttonPrimaryText}>Nouvelle demande</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderCarwashTab = () => {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.heroTitle}>CizaCarWash+ — Réserver un lavage</Text>
+        <Text style={styles.heroSub}>
+          Choisissez le type de lavage, le lieu, le créneau et votre mode de paiement.
+        </Text>
+
+        {renderStepper()}
+
+        <View style={styles.innerCard}>
+          {step === 1 && renderStep1()}
+          {step === 2 && renderStep2()}
+          {step === 3 && renderStep3()}
+          {step === 4 && renderStep4()}
+        </View>
+
+        <View style={styles.bottomInfo}>
+          <Text style={styles.bottomInfoText}>CizaCarWash+ • Bujumbura</Text>
+          <Text style={styles.bottomInfoText}>v1.0 — Front mobile</Text>
+        </View>
+      </View>
+    );
+  };
+
+  const renderServicesTab = () => (
+    <View style={styles.card}>
+      <Text style={styles.heroTitle}>Autres services CIZA GROUP</Text>
+      <Text style={styles.heroSub}>
+        Ces services seront intégrés progressivement dans l’application mobile.
+      </Text>
+      <View style={styles.innerCard}>
+        <Text style={styles.listItem}>• CizaRide+ — Mobilité</Text>
+        <Text style={styles.listItem}>• CizaPay+ — Paiement digital</Text>
+        <Text style={styles.listItem}>• CizaDelivery — Livraison</Text>
+        <Text style={styles.listItem}>• CizaImmo — Immobilier</Text>
+        <Text style={styles.listItem}>• CizaLogistics — Transport & fret</Text>
+        <Text style={styles.listItem}>
+          • CizaTech, CizaMarket, CizaJobs, CizaAcademy, CizaAssist
+        </Text>
+      </View>
+    </View>
+  );
+
+  const renderProfileTab = () => (
+    <View style={styles.card}>
+      <Text style={styles.heroTitle}>Mon profil CIZA GROUP</Text>
+      <Text style={styles.heroSub}>
+        Zone réservée pour les futures fonctionnalités (historique, préférences…).
+      </Text>
+      <View style={styles.innerCard}>
+        <Text style={styles.listItem}>• Connexion / création de compte</Text>
+        <Text style={styles.listItem}>• Historique des lavages et factures</Text>
+        <Text style={styles.listItem}>• Gestion des véhicules enregistrés</Text>
+        <Text style={styles.listItem}>• Méthodes de paiement enregistrées</Text>
+      </View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.brandRow}>
+            <View style={styles.logoPill}>
+              <Text style={styles.logoPillText}>C</Text>
+            </View>
+            <View>
+              <Text style={styles.brandTitle}>CIZA GROUP</Text>
+              <Text style={styles.brandSub}>Écosystème de services • Burundi</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Tabs */}
+        {renderTabButtons()}
+
+        {/* Content */}
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={{ paddingBottom: 24 }}
+        >
+          {activeTab === "carwash" && renderCarwashTab()}
+          {activeTab === "services" && renderServicesTab()}
+          {activeTab === "profile" && renderProfileTab()}
+        </ScrollView>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: "#020617",
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  logoPill: {
+    width: 42,
+    height: 42,
+    borderRadius: 999,
+    backgroundColor: "#0A3D91",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+  },
+  logoPillText: {
+    color: "#F2B840",
+    fontWeight: "800",
+    fontSize: 18,
+  },
+  brandTitle: {
+    color: "#e5e7eb",
+    fontWeight: "700",
+    fontSize: 14,
+    letterSpacing: 1,
+  },
+  brandSub: {
+    color: "#9ca3af",
+    fontSize: 11,
+  },
+  tabs: {
+    flexDirection: "row",
+    marginBottom: 8,
+    gap: 6,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 999,
+    paddingVertical: 6,
+    backgroundColor: "#020617",
+    borderWidth: 1,
+    borderColor: "#1f2937",
+  },
+  tabActive: {
+    backgroundColor: "#0A3D91",
+    borderColor: "#60a5fa",
+  },
+  tabIcon: {
+    color: "#9ca3af",
+    marginRight: 4,
+  },
+  tabLabel: {
+    color: "#9ca3af",
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  tabLabelActive: {
+    color: "#f9fafb",
+  },
+  scroll: {
+    flex: 1,
+  },
+  card: {
+    backgroundColor: "#020617",
+    borderRadius: 20,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#1d4ed8",
+    marginTop: 4,
+  },
+  heroTitle: {
+    color: "#e5e7eb",
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  heroSub: {
+    color: "#9ca3af",
+    fontSize: 12,
+    marginBottom: 10,
+  },
+  innerCard: {
+    backgroundColor: "#020617",
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#1f2937",
+  },
+  listItem: {
+    color: "#e5e7eb",
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  stepper: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginVertical: 10,
+  },
+  step: {
+    flex: 1,
+    alignItems: "center",
+  },
+  stepCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderColor: "#4b5563",
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#020617",
+  },
+  stepCircleActive: {
+    backgroundColor: "#F2B840",
+    borderColor: "#F2B840",
+  },
+  stepCircleText: {
+    fontSize: 11,
+    color: "#9ca3af",
+  },
+  stepCircleTextActive: {
+    color: "#0b1120",
+    fontWeight: "700",
+  },
+  stepLabel: {
+    marginTop: 4,
+    fontSize: 10,
+    color: "#64748b",
+  },
+  stepLabelActive: {
+    color: "#e5e7eb",
+    fontWeight: "600",
+  },
+  fieldLabel: {
+    fontSize: 12,
+    color: "#9ca3af",
+    marginBottom: 4,
+  },
+  chipGroup: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  chip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#1f2937",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "#020617",
+  },
+  chipSelected: {
+    borderColor: "#F2B840",
+    backgroundColor: "#111827",
+  },
+  chipText: {
+    fontSize: 11,
+    color: "#e5e7eb",
+  },
+  chipTextSelected: {
+    color: "#fef9c3",
+    fontWeight: "600",
+  },
+  row2: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 4,
+  },
+  input: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#1f2937",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    color: "#e5e7eb",
+    fontSize: 12,
+    backgroundColor: "#020617",
+  },
+  textarea: {
+    minHeight: 70,
+    textAlignVertical: "top",
+  },
+  payMethods: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
+  },
+  payOption: {
+    flex: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#1f2937",
+    padding: 8,
+    backgroundColor: "#020617",
+  },
+  payOptionSelected: {
+    borderColor: "#22c55e",
+    backgroundColor: "#052e16",
+  },
+  payOptionTitle: {
+    fontSize: 13,
+    color: "#e5e7eb",
+    fontWeight: "600",
+  },
+  payOptionSubtitle: {
+    fontSize: 11,
+    color: "#9ca3af",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+  },
+  buttonPrimary: {
+    flex: 1,
+    borderRadius: 999,
+    paddingVertical: 10,
+    backgroundColor: "#F2B840",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonPrimaryText: {
+    color: "#0b1120",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  buttonGhost: {
+    flex: 1,
+    borderRadius: 999,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "#4b5563",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonGhostText: {
+    color: "#e5e7eb",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  confirmTitle: {
+    fontSize: 14,
+    color: "#bbf7d0",
+    marginBottom: 6,
+  },
+  confirmText: {
+    fontSize: 12,
+    color: "#e5e7eb",
+    marginBottom: 8,
+  },
+  summaryBox: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#1f2937",
+    padding: 10,
+    backgroundColor: "#020617",
+  },
+  summaryTitle: {
+    fontSize: 13,
+    color: "#facc15",
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  summaryLine: {
+    fontSize: 12,
+    color: "#e5e7eb",
+  },
+  bottomInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+  bottomInfoText: {
+    fontSize: 10,
+    color: "#64748b",
+  },
+});
